@@ -1,11 +1,12 @@
 import os
+import click
+from datetime import datetime
 
 from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-import click
-from sqlalchemy import DateTime, Integer, String, func, ForeignKey
-from datetime import datetime
+from sqlalchemy import DateTime, Integer, String, func, ForeignKey, Boolean
+from flask_migrate import Migrate
 
 
 class Base(DeclarativeBase):
@@ -13,14 +14,20 @@ class Base(DeclarativeBase):
 
 
 db = SQLAlchemy(model_class=Base)
+migrate = Migrate()
+
+# Criação de tabelas = 'User'
 
 
 class User(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, username={self.username!r})"
+        return f"User(id={self.id!r}, username={self.username!r}, active={self.active!r})"
+
+# Criação de tabelas = 'Post'
 
 
 class Post(db.Model):
@@ -52,7 +59,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         # Passa o caminho que será criado o banco de dados. É em sqlite para não precisar instalar nenhum outro SGBD
-        SQLALCHEMY_DATABASE_URI="sqlite:///dio_bank.sqlite",
+        SQLALCHEMY_DATABASE_URI="sqlite:///blog.sqlite",
     )
 
     if test_config is None:
@@ -73,5 +80,11 @@ def create_app(test_config=None):
 
     # Inicializando a extensão 'app'
     db.init_app(app)
+    migrate.init_app(app, db)
+
+    # Registrando a Blueprint
+    from src.controllers import user
+
+    app.register_blueprint(user.app)
 
     return app
