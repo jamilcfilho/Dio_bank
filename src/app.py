@@ -4,9 +4,10 @@ from datetime import datetime
 
 from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import DateTime, Integer, String, func, ForeignKey, Boolean
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 
 
 class Base(DeclarativeBase):
@@ -15,6 +16,19 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
+jwt = JWTManager()
+
+# Criando uma 'role' de usuários 'admin' e 'user'
+
+
+class Role(db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    user: Mapped[list["User"]] = relationship(back_populates="role")
+
+    def __repr__(self) -> str:
+        return f"Role(id={self.id!r}, name={self.name!r})"
+
 
 # Criação de tabelas = 'User'
 
@@ -22,10 +36,12 @@ migrate = Migrate()
 class User(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("role.id"))
+    role: Mapped["Role"] = relationship(back_populates="user")
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, username={self.username!r}, active={self.active!r})"
+        return f"User(id={self.id!r}, username={self.username!r})"
 
 # Criação de tabelas = 'Post'
 
@@ -60,6 +76,7 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         # Passa o caminho que será criado o banco de dados. É em sqlite para não precisar instalar nenhum outro SGBD
         SQLALCHEMY_DATABASE_URI="sqlite:///blog.sqlite",
+        JWT_SECRET_KEY="super-secret",
     )
 
     if test_config is None:
@@ -81,10 +98,15 @@ def create_app(test_config=None):
     # Inicializando a extensão 'app'
     db.init_app(app)
     migrate.init_app(app, db)
+    jwt.init_app(app)
 
     # Registrando a Blueprint
     from src.controllers import user
+    from src.controllers import auth
+    from src.controllers import role
 
     app.register_blueprint(user.app)
+    app.register_blueprint(auth.app)
+    app.register_blueprint(role.app)
 
     return app
