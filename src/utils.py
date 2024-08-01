@@ -19,3 +19,9 @@ def requires_role(role_name):
         return wrapped
 
     return decorator
+
+# Somente para demonstrar o uso de 'Teste unitário' com o Pytest no arquivo 'test_utils'
+
+
+def eleva_quadrado(x):
+    return x**2

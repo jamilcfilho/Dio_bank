@@ -54,7 +54,7 @@ def list_or_create_user():
 def get_user(user_id):
     user = db.get_or_404(User, user_id)
     return {
-        "id": user_id,
+        "id": user.id,
         "username": user.username,
     }
 
