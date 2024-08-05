@@ -11,10 +11,11 @@ flask = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 flask-jwt-extended = "^4.6.0"
-pytest = "*"
 
-# pyproject.toml
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
 pytest-mock = "*"
+
 [tool.pytest.ini_options]
 addopts = "-vvv"
 testpaths = ["tests"]
